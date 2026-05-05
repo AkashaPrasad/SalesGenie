@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}SalesGenie{% endblock %} — AI Sales Assistant</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+
+  <!-- Skip navigation — first focusable element, required for WCAG 2.1 AA -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  {% if session.get('user_email') %}
+  <header role="banner" class="bg-white border-b border-gray-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl" aria-hidden="true">🤖</span>
+          <span class="font-bold text-xl text-blue-700">SalesGenie</span>
+        </div>
+
+        <nav role="navigation" aria-label="Main navigation">
+          <ul class="flex gap-2 list-none m-0 p-0">
+            <li>
+              <a href="/dashboard"
+                 class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 {% if request.path == '/dashboard' %}aria-current="page"{% endif %}>
+                Dashboard
+              </a>
+            </li>
+            <li>
+              <a href="/leads"
+                 class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 {% if request.path == '/leads' %}aria-current="page"{% endif %}>
+                Leads
+              </a>
+            </li>
+            <li>
+              <a href="/outreach"
+                 class="nav-link px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-700 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 {% if request.path == '/outreach' %}aria-current="page"{% endif %}>
+                Outreach
+              </a>
+            </li>
+            <li>
+              <a href="/logout"
+                 class="px-3 py-2 rounded-md text-sm font-medium text-red-700 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500"
+                 aria-label="Log out of SalesGenie">
+                Logout
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </header>
+  {% endif %}
+
+  <main role="main" id="main-content" tabindex="-1" class="flex-1">
+    <!-- Live region for screen reader announcements -->
+    <div role="alert"
+         aria-live="polite"
+         aria-atomic="true"
+         id="status-message"
+         class="sr-only">
+    </div>
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer role="contentinfo" class="bg-white border-t border-gray-200 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 py-4 text-center text-sm text-gray-700">
+      SalesGenie &copy; 2026 — AI-Powered Sales Automation |
+      <span class="text-blue-700">WCAG 2.1 AA Compliant</span>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

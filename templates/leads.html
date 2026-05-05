@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% block title %}Leads{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
+    <h1 class="text-2xl font-bold text-gray-900">Lead Management</h1>
+    <button id="open-modal-btn"
+            onclick="openModal('add-lead-modal')"
+            class="bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            aria-label="Open form to add a new lead">
+      + Add Lead
+    </button>
+  </div>
+
+  <!-- Search -->
+  <div class="mb-6">
+    <label for="search-input" class="block text-sm font-medium text-gray-900 mb-2">
+      Search Leads
+    </label>
+    <input id="search-input"
+           type="search"
+           name="q"
+           placeholder="Search by name, company, or email..."
+           class="w-full max-w-md border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+           aria-label="Search leads by name, company, or email"
+           autocomplete="off"
+           oninput="debounceSearch(this.value)" />
+  </div>
+
+  <!-- Leads table -->
+  <section aria-labelledby="leads-table-heading">
+    <h2 id="leads-table-heading" class="sr-only">Leads List</h2>
+    <div class="bg-white rounded-xl shadow overflow-hidden">
+      <div class="overflow-x-auto" role="region" aria-label="Leads data table" tabindex="0">
+        <table class="min-w-full" aria-label="Sales leads">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Name</th>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Company</th>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Deal Size</th>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Stage</th>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">AI Score</th>
+              <th scope="col" class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="leads-tbody" class="divide-y divide-gray-100">
+            <tr>
+              <td colspan="7" class="px-4 py-8 text-center text-gray-700 text-sm">
+                Loading leads...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Add Lead Modal -->
+<div id="add-lead-modal"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="modal-title"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 hidden"
+     tabindex="-1">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-8">
+    <div class="flex items-center justify-between mb-6">
+      <h2 id="modal-title" class="text-xl font-bold text-gray-900">Add New Lead</h2>
+      <button onclick="closeModal('add-lead-modal')"
+              class="text-gray-700 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+              aria-label="Close add lead form">
+        ✕
+      </button>
+    </div>
+
+    <form id="add-lead-form"
+          aria-labelledby="modal-title"
+          novalidate
+          onsubmit="submitLead(event)">
+
+      <div class="space-y-4">
+        <div>
+          <label for="lead-name" class="block text-sm font-medium text-gray-900 mb-1">
+            Full Name <span aria-hidden="true" class="text-red-700">*</span>
+          </label>
+          <input id="lead-name" name="name" type="text" required aria-required="true"
+                 aria-describedby="lead-name-error" autocomplete="name"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 placeholder="Jane Smith" />
+          <p id="lead-name-error" role="alert" class="error-msg text-xs text-red-700 mt-1 hidden">
+            Name must be at least 2 characters.
+          </p>
+        </div>
+
+        <div>
+          <label for="lead-company" class="block text-sm font-medium text-gray-900 mb-1">
+            Company <span aria-hidden="true" class="text-red-700">*</span>
+          </label>
+          <input id="lead-company" name="company" type="text" required aria-required="true"
+                 aria-describedby="lead-company-error" autocomplete="organization"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 placeholder="Acme Corp" />
+          <p id="lead-company-error" role="alert" class="error-msg text-xs text-red-700 mt-1 hidden">
+            Company name is required.
+          </p>
+        </div>
+
+        <div>
+          <label for="lead-email" class="block text-sm font-medium text-gray-900 mb-1">
+            Email Address <span aria-hidden="true" class="text-red-700">*</span>
+          </label>
+          <input id="lead-email" name="email" type="email" required aria-required="true"
+                 aria-describedby="lead-email-error" autocomplete="email"
+                 class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                 placeholder="jane@acme.com" />
+          <p id="lead-email-error" role="alert" class="error-msg text-xs text-red-700 mt-1 hidden">
+            Valid email address is required.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="lead-deal" class="block text-sm font-medium text-gray-900 mb-1">
+              Deal Size ($)
+            </label>
+            <input id="lead-deal" name="deal_size" type="number" min="0"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="5000" aria-label="Estimated deal size in US dollars" />
+          </div>
+
+          <div>
+            <label for="lead-stage" class="block text-sm font-medium text-gray-900 mb-1">
+              Stage
+            </label>
+            <select id="lead-stage" name="stage"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Pipeline stage for this lead">
+              {% for stage in stages %}
+              <option value="{{ stage }}">{{ stage }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="lead-urgency" class="block text-sm font-medium text-gray-900 mb-1">
+              Urgency
+            </label>
+            <select id="lead-urgency" name="urgency"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Lead urgency level">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="lead-product" class="block text-sm font-medium text-gray-900 mb-1">
+              Product / Service
+            </label>
+            <input id="lead-product" name="product" type="text"
+                   class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   placeholder="SalesGenie Pro" aria-label="Product or service being pitched" />
+          </div>
+        </div>
+
+        <div>
+          <label for="lead-notes" class="block text-sm font-medium text-gray-900 mb-1">
+            Notes
+          </label>
+          <textarea id="lead-notes" name="notes" rows="2"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Any additional context..."
+                    aria-label="Additional notes about this lead"
+                    maxlength="500"></textarea>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button type="submit" id="submit-lead-btn"
+                class="flex-1 bg-blue-700 text-white py-2 rounded-lg font-semibold hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                aria-label="Save lead and score it with AI">
+          <span class="btn-text">Add & Score Lead</span>
+        </button>
+        <button type="button"
+                onclick="closeModal('add-lead-modal')"
+                class="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Cancel and close form">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', loadLeads);
+
+  async function loadLeads(query = '') {
+    const url = query ? `/api/leads/search?q=${encodeURIComponent(query)}` : '/api/leads';
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Failed to fetch');
+      const { leads } = await res.json();
+      renderLeadsTable(leads);
+    } catch (e) {
+      document.getElementById('leads-tbody').innerHTML =
+        '<tr><td colspan="7" class="px-4 py-8 text-center text-red-700">Failed to load leads.</td></tr>';
+    }
+  }
+
+  function renderLeadsTable(leads) {
+    const tbody = document.getElementById('leads-tbody');
+    if (!leads || leads.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-700 text-sm">No leads yet. Add your first lead!</td></tr>';
+      return;
+    }
+    tbody.innerHTML = leads.map((l, idx) => `
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3 text-sm font-medium text-gray-900">${escHtml(l.name)}</td>
+        <td class="px-4 py-3 text-sm text-gray-700">${escHtml(l.company)}</td>
+        <td class="px-4 py-3 text-sm text-gray-700">${escHtml(l.email)}</td>
+        <td class="px-4 py-3 text-sm text-gray-700">$${Number(l.deal_size || 0).toLocaleString()}</td>
+        <td class="px-4 py-3 text-sm">
+          <span class="px-2 py-0.5 rounded-full text-xs font-medium ${stageColor(l.stage)}">${escHtml(l.stage)}</span>
+        </td>
+        <td class="px-4 py-3 text-sm">
+          <span class="font-bold ${scoreColor(l.score)}">${l.score || '—'}</span>
+        </td>
+        <td class="px-4 py-3 text-sm">
+          <a href="/outreach?lead=${encodeURIComponent(JSON.stringify({name:l.name,company:l.company,email:l.email,deal_size:l.deal_size,product:l.product}))}"
+             class="text-blue-700 hover:text-blue-900 underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+             aria-label="Draft email for ${escHtml(l.name)}">
+            Draft Email
+          </a>
+        </td>
+      </tr>`).join('');
+  }
+
+  function stageColor(stage) {
+    const map = {
+      'Prospecting': 'bg-gray-100 text-gray-700',
+      'Contacted': 'bg-blue-100 text-blue-700',
+      'Proposal': 'bg-yellow-100 text-yellow-700',
+      'Closed Won': 'bg-green-100 text-green-700',
+      'Closed Lost': 'bg-red-100 text-red-700',
+    };
+    return map[stage] || 'bg-gray-100 text-gray-700';
+  }
+
+  function scoreColor(score) {
+    const s = Number(score) || 0;
+    if (s >= 70) return 'text-green-700';
+    if (s >= 40) return 'text-yellow-700';
+    return 'text-red-700';
+  }
+
+  async function submitLead(e) {
+    e.preventDefault();
+    const btn = document.getElementById('submit-lead-btn');
+    const form = document.getElementById('add-lead-form');
+    const data = Object.fromEntries(new FormData(form).entries());
+    data.deal_size = parseInt(data.deal_size) || 0;
+
+    if (!data.name || data.name.length < 2) {
+      showFieldError('lead-name-error', true);
+      document.getElementById('lead-name').focus();
+      return;
+    }
+    showFieldError('lead-name-error', false);
+
+    if (!data.email || !data.email.includes('@')) {
+      showFieldError('lead-email-error', true);
+      document.getElementById('lead-email').focus();
+      return;
+    }
+    showFieldError('lead-email-error', false);
+
+    setLoading(btn, true, 'Scoring with AI...');
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        announce(result.error || 'Failed to add lead.');
+        return;
+      }
+      closeModal('add-lead-modal');
+      form.reset();
+      announce(`Lead added with AI score ${result.lead.score}. Refreshing list.`);
+      await loadLeads();
+    } catch (err) {
+      announce('Network error. Please try again.');
+    } finally {
+      setLoading(btn, false, 'Add & Score Lead');
+    }
+  }
+
+  function showFieldError(id, show) {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('hidden', !show);
+  }
+
+  const debounceSearch = debounce((q) => loadLeads(q), 300);
+</script>
+{% endblock %}

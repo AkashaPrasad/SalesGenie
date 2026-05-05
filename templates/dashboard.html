@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+  <div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">
+      Welcome back, <span id="user-name">{{ user_name }}</span>
+    </h1>
+    <p class="text-gray-700 mt-1">Your AI-powered sales pipeline</p>
+  </div>
+
+  <!-- Stats cards -->
+  <section aria-labelledby="stats-heading">
+    <h2 id="stats-heading" class="sr-only">Pipeline Statistics</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="stats-grid">
+      <div class="bg-white rounded-xl shadow p-5" role="region" aria-label="Total leads">
+        <p class="text-sm text-gray-700 font-medium">Total Leads</p>
+        <p class="text-3xl font-bold text-blue-700 mt-1" id="stat-total">—</p>
+      </div>
+      <div class="bg-white rounded-xl shadow p-5" role="region" aria-label="Win rate percentage">
+        <p class="text-sm text-gray-700 font-medium">Win Rate</p>
+        <p class="text-3xl font-bold text-green-700 mt-1" id="stat-winrate">—</p>
+      </div>
+      <div class="bg-white rounded-xl shadow p-5" role="region" aria-label="Average deal size in dollars">
+        <p class="text-sm text-gray-700 font-medium">Avg Deal Size</p>
+        <p class="text-3xl font-bold text-indigo-700 mt-1" id="stat-deal">—</p>
+      </div>
+      <div class="bg-white rounded-xl shadow p-5" role="region" aria-label="Average AI lead score">
+        <p class="text-sm text-gray-700 font-medium">Avg Lead Score</p>
+        <p class="text-3xl font-bold text-yellow-700 mt-1" id="stat-score">—</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Kanban pipeline -->
+  <section aria-labelledby="pipeline-heading" class="mb-8">
+    <h2 id="pipeline-heading" class="text-xl font-semibold text-gray-900 mb-4">Deal Pipeline</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4" id="kanban-board" role="list"
+         aria-label="Sales pipeline stages">
+      {% for stage in stages %}
+      <div class="bg-white rounded-xl shadow p-4" role="listitem"
+           aria-label="{{ stage }} pipeline column">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-sm text-gray-900">{{ stage }}</h3>
+          <span class="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-0.5 rounded-full"
+                id="count-{{ stage | replace(' ', '-') | lower }}"
+                aria-label="{{ stage }} count">0</span>
+        </div>
+        <div id="stage-{{ stage | replace(' ', '-') | lower }}"
+             class="space-y-2 min-h-12"
+             aria-label="{{ stage }} leads">
+          <p class="text-xs text-gray-700 text-center py-4" aria-hidden="true">Loading...</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- AI Sales Coach chatbot -->
+  <section aria-labelledby="coach-heading">
+    <h2 id="coach-heading" class="text-xl font-semibold text-gray-900 mb-4">AI Sales Coach</h2>
+    <div class="bg-white rounded-xl shadow p-6">
+      <div class="mb-4">
+        <label for="objection-input" class="block text-sm font-medium text-gray-900 mb-2">
+          Got an objection from a prospect? Let AI help you respond.
+        </label>
+        <textarea id="objection-input"
+                  name="objection"
+                  rows="3"
+                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="e.g. Your price is too high compared to competitors..."
+                  aria-required="false"
+                  aria-describedby="objection-hint"
+                  maxlength="500"></textarea>
+        <p id="objection-hint" class="text-xs text-gray-700 mt-1">Max 500 characters</p>
+      </div>
+      <button id="handle-objection-btn"
+              onclick="handleObjection()"
+              class="bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+              aria-label="Get AI counter-responses for the objection">
+        <span class="btn-text">Get Counter-Responses</span>
+      </button>
+      <div id="objection-results" class="mt-4 hidden" role="region" aria-label="AI counter-responses" aria-live="polite">
+      </div>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    loadStats();
+    loadPipeline();
+  });
+
+  async function loadStats() {
+    try {
+      const res = await fetch('/api/dashboard/stats');
+      if (!res.ok) return;
+      const data = await res.json();
+      document.getElementById('stat-total').textContent = data.total_leads ?? 0;
+      document.getElementById('stat-winrate').textContent = (data.win_rate ?? 0) + '%';
+      document.getElementById('stat-deal').textContent = '$' + (data.avg_deal_size ?? 0).toLocaleString();
+      document.getElementById('stat-score').textContent = data.avg_score ?? 0;
+    } catch (e) {
+      console.error('Stats load failed', e);
+    }
+  }
+
+  async function loadPipeline() {
+    try {
+      const res = await fetch('/api/dashboard/leads-by-stage');
+      if (!res.ok) return;
+      const { stages } = await res.json();
+      renderKanban(stages);
+    } catch (e) {
+      console.error('Pipeline load failed', e);
+    }
+  }
+
+  function renderKanban(stages) {
+    Object.entries(stages).forEach(([stage, leads]) => {
+      const id = 'stage-' + stage.toLowerCase().replace(/ /g, '-');
+      const countId = 'count-' + stage.toLowerCase().replace(/ /g, '-');
+      const col = document.getElementById(id);
+      const countEl = document.getElementById(countId);
+      if (!col) return;
+      countEl && (countEl.textContent = leads.length);
+      col.innerHTML = leads.length === 0
+        ? '<p class="text-xs text-gray-700 text-center py-4">No leads</p>'
+        : leads.map(l => `
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p class="font-semibold text-sm text-gray-900">${escHtml(l.name)}</p>
+              <p class="text-xs text-gray-700">${escHtml(l.company)}</p>
+              <div class="flex justify-between mt-1">
+                <span class="text-xs text-green-700 font-medium">$${Number(l.deal_size || 0).toLocaleString()}</span>
+                <span class="text-xs bg-yellow-100 text-yellow-700 rounded-full px-2">Score: ${l.score || '—'}</span>
+              </div>
+            </div>`).join('');
+    });
+  }
+
+  async function handleObjection() {
+    const btn = document.getElementById('handle-objection-btn');
+    const objection = document.getElementById('objection-input').value.trim();
+    if (!objection) {
+      announce('Please enter an objection to get counter-responses.');
+      return;
+    }
+    setLoading(btn, true, 'Generating responses...');
+    try {
+      const res = await fetch('/api/outreach/objection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ objection })
+      });
+      const data = await res.json();
+      const container = document.getElementById('objection-results');
+      container.classList.remove('hidden');
+      container.innerHTML = (data.responses || []).map((r, i) => `
+        <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-2">
+          <p class="text-sm font-semibold text-gray-900 mb-1">Response ${i + 1}</p>
+          <p class="text-sm text-gray-700">${escHtml(r.response)}</p>
+        </div>`).join('');
+      announce('Counter-responses generated. Review the suggestions below.');
+    } catch (e) {
+      announce('Failed to generate responses. Please try again.');
+    } finally {
+      setLoading(btn, false, 'Get Counter-Responses');
+    }
+  }
+</script>
+{% endblock %}

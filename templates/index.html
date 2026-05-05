@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-blue-700 to-indigo-800 flex items-center justify-center px-4">
+  <div class="max-w-xl w-full bg-white rounded-2xl shadow-2xl p-10 text-center">
+
+    <div class="text-6xl mb-4" aria-hidden="true">🤖</div>
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">SalesGenie</h1>
+    <p class="text-gray-700 mb-2 text-lg">AI-Powered Sales Automation</p>
+    <p class="text-gray-700 mb-8 text-sm">
+      Score leads, draft persuasive emails, schedule follow-ups — powered by
+      Google Gemini AI and Google Workspace.
+    </p>
+
+    <ul class="text-left space-y-3 mb-8" role="list" aria-label="Key features">
+      <li class="flex items-center gap-3 text-gray-700">
+        <span class="text-green-700 font-bold text-lg" aria-hidden="true">✓</span>
+        <span>AI Lead Scoring (1–100) via Gemini</span>
+      </li>
+      <li class="flex items-center gap-3 text-gray-700">
+        <span class="text-green-700 font-bold text-lg" aria-hidden="true">✓</span>
+        <span>Personalized email drafts with persuasion analysis</span>
+      </li>
+      <li class="flex items-center gap-3 text-gray-700">
+        <span class="text-green-700 font-bold text-lg" aria-hidden="true">✓</span>
+        <span>One-click send via Gmail API</span>
+      </li>
+      <li class="flex items-center gap-3 text-gray-700">
+        <span class="text-green-700 font-bold text-lg" aria-hidden="true">✓</span>
+        <span>Auto-schedule follow-ups in Google Calendar</span>
+      </li>
+      <li class="flex items-center gap-3 text-gray-700">
+        <span class="text-green-700 font-bold text-lg" aria-hidden="true">✓</span>
+        <span>Kanban pipeline synced with Google Sheets</span>
+      </li>
+    </ul>
+
+    <a href="/login"
+       class="inline-block bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-colors"
+       aria-label="Sign in with Google to start using SalesGenie">
+      Sign in with Google
+    </a>
+
+    <p class="mt-6 text-xs text-gray-700">
+      Requires Gmail, Google Calendar, and Google Sheets access.
+    </p>
+  </div>
+</div>
+{% endblock %}
