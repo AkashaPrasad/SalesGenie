@@ -1,0 +1,13 @@
+.env
+token.json
+client_secret.json
+__pycache__/
+*.pyc
+.git/
+venv/
+.venv/
+tests/
+htmlcov/
+.coverage
+client_secret.json
+SALESGENIE_MASTER_PROMPT.md
